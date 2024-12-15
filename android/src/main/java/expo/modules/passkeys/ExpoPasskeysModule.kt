@@ -9,7 +9,6 @@ import kotlinx.coroutines.launch
 
 import CreatePasskeyRequest
 import GetPasskeyRequest
-import UserData
 import UserRecord
 import RpRecord
 
@@ -19,19 +18,7 @@ import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
-import androidx.credentials.exceptions.CreateCredentialCancellationException
-import androidx.credentials.exceptions.CreateCredentialException
-import androidx.credentials.exceptions.CreateCredentialInterruptedException
-import androidx.credentials.exceptions.CreateCredentialProviderConfigurationException
-import androidx.credentials.exceptions.CreateCredentialUnknownException
-import androidx.credentials.exceptions.CreateCredentialUnsupportedException
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.GetCredentialInterruptedException
-import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
-import androidx.credentials.exceptions.GetCredentialUnknownException
-import androidx.credentials.exceptions.GetCredentialUnsupportedException
-import androidx.credentials.exceptions.NoCredentialException
+import androidx.credentials.exceptions.*
 import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialDomException
 import java.io.PrintWriter
@@ -76,6 +63,18 @@ class ExpoPasskeysModule : Module() {
         )
     )
   }
+
+  private fun newPasskeySignInRequest(challenge: String, user: UserRecord, rp: RpRecord, timeout: Long): String {
+    return Gson().toJson(
+        GetPasskeyRequest(
+            challenge = challenge,
+            allowCredentials = listOf(),
+            timeout = timeout,
+            userVerification = "required", 
+            rpId = rp.id
+        )
+    )
+  }
   
   override fun definition() = ModuleDefinition {
     Name("ExpoPasskeys")
@@ -108,6 +107,30 @@ class ExpoPasskeysModule : Module() {
         catch (e: CreateCredentialException) {
           val (errorCode, errorMessage) = handleCreationError(e)
           promise.reject(errorCode, errorMessage, e)
+        }
+      }
+    }
+
+    AsyncFunction("signInAsync") { challenge: String, user: UserRecord, rp: RpRecord, timeout: Long, promise: Promise ->
+      mainScope.launch {
+        val credentialManager = CredentialManager.create(appContext.reactContext?.applicationContext!!)
+        val jsonRequest = newPasskeySignInRequest(challenge, user, rp, timeout)
+        val request = GetCredentialRequest(listOf(GetPublicKeyCredentialOption(jsonRequest)))
+
+        try {
+            val cred = (appContext.currentActivity?.let {
+              credentialManager.getCredential(it, request);
+            })?.credential?.data;
+
+            // Handle the response (returning JSON or other data)
+            val responseJson = cred?.getString("androidx.credentials.BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON")
+
+            // Resolve the promise with the authentication response
+            promise.resolve(responseJson)
+        } catch (e: GetCredentialException) {
+            // Handle errors during the sign-in process
+            val (errorCode, errorMessage) = handleAuthenticationError(e)
+            promise.reject(errorCode, errorMessage, e)
         }
       }
     }
@@ -146,5 +169,48 @@ class ExpoPasskeysModule : Module() {
             "GENERAL_ERROR" to "An error occurred: ${e.localizedMessage ?: e.toString()}\nStack Trace:\n$stackTrace"
         }
     }
-}
+  }
+
+  private fun handleAuthenticationError(e: GetCredentialException): Pair<String, String> {
+    val stackTrace = StringWriter().apply {
+      PrintWriter(this).use { pw ->
+          e.printStackTrace(pw)
+      }
+    }.toString()
+
+    return when (e) {
+      is GetPublicKeyCredentialDomException -> {
+        // DOM errors according to WebAuthn spec; log the domError type for details
+        "DOM_ERROR" to "${e.domError.toString()}\nStack Trace:\n$stackTrace"
+      }
+      is GetCredentialCancellationException -> {
+          // User canceled the operation
+          "USER_CANCELLED" to "The user canceled the credential retrieval.\nStack Trace:\n$stackTrace"
+      }
+      is GetCredentialInterruptedException -> {
+          // Retry-able error; log for inspection
+          "INTERRUPTED_ERROR" to "Credential retrieval was interrupted: ${e.message}\nStack Trace:\n$stackTrace"
+      }
+      is GetCredentialProviderConfigurationException -> {
+          // Missing provider configuration dependency
+          "CONFIGURATION_ERROR" to "App is missing provider configuration dependency.\nStack Trace:\n$stackTrace"
+      }
+      is GetCredentialUnknownException -> {
+          // Unknown error, logging cause for more info
+          "UNKNOWN_ERROR" to "Unknown error occurred: ${e.message}, Cause: ${e.cause}\nStack Trace:\n$stackTrace"
+      }
+      is GetCredentialUnsupportedException -> {
+          // Unsupported credential type or platform
+          "NOT_SUPPORTED" to "The requested credential type is not supported.\nStack Trace:\n$stackTrace"
+      }
+      is NoCredentialException -> {
+          // No credential available for sign-in
+          "NO_CREDENTIALS" to "No credentials were found for sign-in.\nStack Trace:\n$stackTrace"
+      }
+      else -> {
+          // Catch-all for any other types
+          "GENERAL_ERROR" to "An error occurred: ${e.localizedMessage ?: e.toString()}\nStack Trace:\n$stackTrace"
+      }
+    }
+  }
 }

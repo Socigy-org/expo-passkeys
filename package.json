@@ -1,7 +1,7 @@
 {
   "name": "expo-passkeys",
-  "version": "0.1.0",
-  "description": "Expo module built for lightweight passkey usage. \r\nSupport:\r\nWeb ✅\r\nAndroid (partialy)\r\niOS (in development)",
+  "version": "0.1.1",
+  "description": "Expo module built for lightweight passkey usage. \r\nSupport:\r\nWeb ✅\r\nAndroid ✅\r\niOS (in development)",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -19,15 +19,16 @@
     "react-native",
     "expo",
     "expo-passkeys",
-    "ExpoPasskeys"
+    "ExpoPasskeys",
+    "passkeys"
   ],
-  "repository": "https://github.com",
+  "repository": "https://github.com/Socigy-org/expo-passkeys",
   "bugs": {
-    "url": "https://github.com/issues"
+    "url": "https://github.com/Socigy-org/expo-passkeys/issues"
   },
-  "author": "WailedParsley36 <> ()",
-  "license": "MIT",
-  "homepage": "https://github.com#readme",
+  "author": "Socigy",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/Socigy-org/expo-passkeys#readme",
   "devDependencies": {
     "@types/react": "^18.0.25",
     "expo-module-scripts": "^3.5.2",

@@ -17,11 +17,17 @@ export async function createAsync(challenge: string, user: { id: Guid, name: str
 }
 
 export async function signInAsync(challenge: string, user: { id: Guid, name: string, displayName: string }, rp: { id: string, name: string }, timeout: number): Promise<SignInWithPasskeyResponse> {
-  const passkeyResult = await ExpoPasskeysModule.signInAsync(challenge, user, rp, timeout);
-  if (typeof passkeyResult == typeof String)
-    return JSON.parse(passkeyResult) as SignInWithPasskeyResponse;
-  else
-    return passkeyResult
+  try {
+    const passkeyResult = await ExpoPasskeysModule.signInAsync(challenge, user, rp, timeout);
+    if (typeof passkeyResult == typeof String)
+      return JSON.parse(passkeyResult) as SignInWithPasskeyResponse;
+    else
+      return passkeyResult
+  }
+  catch (e) {
+    console.error(e)
+    return e
+  }
 }
 
 export async function isAutoFillSupported(): Promise<boolean> {
