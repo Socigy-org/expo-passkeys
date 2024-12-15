@@ -23,3 +23,19 @@ export interface SignInWithPasskeyResponse {
     signature: string
   }
 }
+
+export interface Error {
+  code: string
+}
+
+export type PasskeyUserInfo = {
+  id: Guid,
+  name: string,
+  displayName: string
+};
+
+export type PasskeyRpInfo = {
+  /** The party domain: example.com / another.example.com */
+  id: `${string}.${string}`
+  name: string
+}

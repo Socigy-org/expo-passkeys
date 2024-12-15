@@ -1,32 +1,30 @@
 import ExpoPasskeysModule from './ExpoPasskeysModule';
-import { CreatePasskeyResponse, Guid, SignInWithPasskeyResponse } from './ExpoPasskeys.types';
+import { CreatePasskeyResponse, Error, PasskeyRpInfo, PasskeyUserInfo, SignInWithPasskeyResponse } from './ExpoPasskeys.types';
 
-export async function createAsync(challenge: string, user: { id: Guid, name: string, displayName: string }, rp: { id: string, name: string }, timeout: number): Promise<CreatePasskeyResponse> {
+export async function createAsync(challenge: string, user: PasskeyUserInfo, rp: PasskeyRpInfo, timeout: number): Promise<{ error?: Error, result?: CreatePasskeyResponse }> {
   try {
     const passkeyResult = await ExpoPasskeysModule.createAsync(challenge, user, rp, timeout);
 
     if (typeof passkeyResult == typeof String)
-      return JSON.parse(passkeyResult) as CreatePasskeyResponse;
+      return { result: JSON.parse(passkeyResult) as CreatePasskeyResponse };
     else
-      return passkeyResult
+      return { result: passkeyResult }
   }
   catch (e) {
-    console.error(e)
-    return e
+    return { error: e }
   }
 }
 
-export async function signInAsync(challenge: string, user: { id: Guid, name: string, displayName: string }, rp: { id: string, name: string }, timeout: number): Promise<SignInWithPasskeyResponse> {
+export async function signInAsync(challenge: string, user: PasskeyUserInfo, rp: PasskeyRpInfo, timeout: number): Promise<{ error?: Error, result?: SignInWithPasskeyResponse }> {
   try {
     const passkeyResult = await ExpoPasskeysModule.signInAsync(challenge, user, rp, timeout);
     if (typeof passkeyResult == typeof String)
-      return JSON.parse(passkeyResult) as SignInWithPasskeyResponse;
+      return { result: JSON.parse(passkeyResult) as SignInWithPasskeyResponse };
     else
-      return passkeyResult
+      return { result: passkeyResult }
   }
   catch (e) {
-    console.error(e)
-    return e
+    return { error: e }
   }
 }
 
