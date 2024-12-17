@@ -24,6 +24,8 @@ import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentia
 import java.io.PrintWriter
 import java.io.StringWriter
 
+import android.util.Log
+
 class ExpoPasskeysModule : Module() {
   private val minSDKApi = 28;
   private val mainScope = CoroutineScope(Dispatchers.Default)
@@ -99,6 +101,15 @@ class ExpoPasskeysModule : Module() {
           val newCred = (appContext.currentActivity?.let {
             credentialManager.createCredential(it, request);
           })?.data;
+
+          // Check if cred is not null and log its content
+          newCred?.let { bundle ->
+            val keys = bundle.keySet() // Retrieve all keys in the bundle
+            for (key in keys) {
+                val value = bundle.get(key) // Retrieve the value associated with the key
+                Log.d("EXPO-PASSKEYS: BundleContent", "Key: $key, Value: $value")
+            }
+          }
   
           val credJson = newCred?.getString("androidx.credentials.BUNDLE_KEY_REGISTRATION_RESPONSE_JSON")
   

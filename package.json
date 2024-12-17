@@ -1,6 +1,6 @@
 {
   "name": "expo-passkeys",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Expo module built for lightweight passkey usage. \r\nSupport:\r\nWeb ✅\r\nAndroid ✅\r\niOS (in development)",
   "main": "build/index.js",
   "types": "build/index.d.ts",
